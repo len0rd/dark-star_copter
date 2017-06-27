@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--Basic launch file to get dark-star in the air with sensors connected to ros
+    @author tyler miller
+    @since 2017-06-07 -->
+
+<launch>
+
+  <!-- Start rosflight -->
+ <node pkg="rosflight" type="rosflight_io" name="rosflight" output="screen">
+    <param name="port" value="/dev/naze"/>
+    <param name="baud" value="921600"/>
+  </node>
+
+</launch>
