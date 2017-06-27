@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(dark-star_copter)
+project(darkstar_copter)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -103,7 +103,7 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 # INCLUDE_DIRS include
-#  LIBRARIES dark-star
+#  LIBRARIES darkstar
  CATKIN_DEPENDS ros_copter rosflight_msgs roscpp rospy
 #  DEPENDS system_lib
 )
@@ -120,8 +120,8 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(dark-star
-#   src/${PROJECT_NAME}/dark-star.cpp
+# add_library(darkstar
+#   src/${PROJECT_NAME}/darkstar.cpp
 # )
 
 ## Declare a C++ executable
@@ -134,7 +134,7 @@ include_directories(
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(dark-star_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(darkstar_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 #target_link_libraries(
@@ -146,7 +146,7 @@ include_directories(
 #  )
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(dark-star_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(darkstar_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 #target_link_libraries(

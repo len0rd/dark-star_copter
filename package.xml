@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>dark-star_copter</name>
+  <name>darkstar_copter</name>
   <version>0.0.0</version>
-  <description>The dark-star package</description>
+  <description>The darkstar package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
