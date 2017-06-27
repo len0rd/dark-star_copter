@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<!--Launch file for dark-star with ros_copter
+<!--Launch file for darkstar with ros_copter
     @author tyler miller
     @since 2017-06-07 -->
 
 <launch>
-  <arg name="mav_name"            default="dark-star"/>
+  <arg name="mav_name"            default="darkstar"/>
 
   <!-- Start rosflight -->
  <node pkg="rosflight" type="rosflight_io" name="rosflight" output="screen">
