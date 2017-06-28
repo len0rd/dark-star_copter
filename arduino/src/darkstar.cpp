@@ -91,6 +91,7 @@ void setup() {
 
 void loop() {
 
+  CPPM.cycle();
   if (CPPM.synchronized()) {
     //int thro = CPPM.read_us(CPPM_THRO) - 1500;
 		int armDisarm = CPPM.read_us(CPPM_GEAR) - 1500;
