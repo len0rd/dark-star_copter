@@ -1,0 +1,4 @@
+[submodule "arduino/lib/CPPM"]
+	path = arduino/lib/CPPM
+	url = https://github.com/jmparatte/CPPM.git
+	branch = master
