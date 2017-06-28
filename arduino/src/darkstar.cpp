@@ -1,4 +1,5 @@
 #include<Arduino.h>
+#include<CPPM.h>
 
 //Pin Configuration:
 const int quadArm1 = 11; //rear-right arm
@@ -19,7 +20,7 @@ typedef enum {
   SLOW_BLINK,
   ON
 } led_state_t;
-led_state_t ledState = ON;
+led_state_t ledState = FADE_IN;
 
 void blinkLed() {
   //need to do something like this in the event we're
@@ -32,17 +33,7 @@ void blinkLed() {
   }
 }
 
-void setup() {
-  //pin declarations:
-  pinMode(quadArm1, OUTPUT);
-  pinMode(quadArm2, OUTPUT);
-  pinMode(quadArm3, OUTPUT);
-  pinMode(quadArm4, OUTPUT);
-}
-
-void loop()
-{
-
+void manageLED() {
   unsigned long currentMillis = millis();
 
   if(currentMillis - previousMillis > ledUpdateInterval) {
@@ -84,5 +75,50 @@ void loop()
     analogWrite(quadArm4, ledValue);
     previousMillis = currentMillis;
   }
+}
 
+void setup() {
+  //pin declarations:
+  pinMode(quadArm1, OUTPUT);
+  pinMode(quadArm2, OUTPUT);
+  pinMode(quadArm3, OUTPUT);
+  pinMode(quadArm4, OUTPUT);
+
+  //Init
+  Serial.begin(9600);
+  CPPM.begin();
+}
+
+void loop() {
+
+  if (CPPM.synchronized()) {
+    //int thro = CPPM.read_us(CPPM_THRO) - 1500;
+		int armDisarm = CPPM.read_us(CPPM_GEAR) - 1500;
+    int arduArmDisarm = CPPM.read(CPPM_AUX4) - 14000;
+
+
+    if (armDisarm < 0  && ledState != FADE_IN && ledState != FADE_OUT) { //|| arduArmDisarm < 0)
+      ledState = FADE_IN;
+      /*if (arduArmDisarm) {
+        Serial.print("FADE::"); Serial.print(arduArmDisarm); Serial.print("\n");
+    		Serial.flush();
+      }*/
+    }
+    else if (armDisarm > 0) {// || arduArmDisarm > 0
+      ledState = FAST_BLINK;
+      /*if (thro > -100) {
+        ledState = ON;
+      }*/
+      /*if (arduArmDisarm > 0) {
+        Serial.print("BLINK::"); Serial.print(arduArmDisarm); Serial.print("\n");
+    		Serial.flush();
+      }*/
+
+    }
+    Serial.print("BLINK::"); Serial.print(arduArmDisarm); Serial.print("\n");
+    Serial.flush();
+
+  }
+
+  manageLED();
 }
