@@ -1,10 +1,11 @@
 #include<Arduino.h>
 #include<CPPM.h>
 
+//defin
 const int QUAD_LED = 6;
 const int CPPM_DELTA = 5;
 
-//Command redundancy check:
+//Command redundancy check variable:
 struct command_t {
   int aile;
   int elev;
@@ -40,8 +41,6 @@ bool repetitiveCmd(command_t curCmd) {
 }
 
 void blinkLed() {
-  //need to do something like this in the event we're
-  //transitioning from the middle of a FADE_IN/OUT
   if (ledValue != 0) {
     ledValue = 0;
   }
@@ -96,7 +95,6 @@ void setup() {
   pinMode(QUAD_LED, OUTPUT);
 
   //Init
-  Serial.begin(9600);
   CPPM.begin();
 }
 
@@ -106,18 +104,14 @@ void loop() {
 
   if (CPPM.synchronized()) {
 
-    int aile = CPPM.read_us(CPPM_AILE);
-    int elev = CPPM.read_us(CPPM_ELEV);
-    int thro = CPPM.read_us(CPPM_THRO);
-    int rudd = CPPM.read_us(CPPM_RUDD);
-    int armDisarm = CPPM.read_us(CPPM_GEAR);
-    int rcOVRD = CPPM.read_us(CPPM_AUX1);
-
     command_t currentCommand;
-    currentCommand.aile = aile;
-    currentCommand.elev = elev;
-    currentCommand.thro = thro;
-    currentCommand.rudd = rudd;
+    currentCommand.aile = CPPM.read_us(CPPM_AILE);
+    currentCommand.elev = CPPM.read_us(CPPM_ELEV);
+    currentCommand.thro = CPPM.read_us(CPPM_THRO);
+    currentCommand.rudd = CPPM.read_us(CPPM_RUDD);
+
+    int  armDisarm         = CPPM.read_us(CPPM_GEAR);
+    int  rcOVRD            = CPPM.read_us(CPPM_AUX1);
     bool updateLastCommand = true;
 
     //LED control:
@@ -127,8 +121,7 @@ void loop() {
     else if (armDisarm > 1250) {
       ledState = ON;
       if (rcOVRD < 1250) { //rc_override is active
-
-        //check for command repitition
+        //check for command repitition:
         if (repetitiveCmd(currentCommand)) {
           updateLastCommand = false;
           duplicateCommandCount++;
@@ -139,17 +132,12 @@ void loop() {
             ledState = FAST_BLINK;
           }
         }
-        else {
-          duplicateCommandCount = 0;
-        }
-      }
-      else {
-        duplicateCommandCount = 0;
       }
     }
 
     if (updateLastCommand) {
       lastCommand = currentCommand;
+      duplicateCommandCount = 0;
     }
 
   }
