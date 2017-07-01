@@ -1,18 +1,24 @@
 #include<Arduino.h>
 #include<CPPM.h>
 
-//Pin Configuration:
-const int quadArm1 = 11; //rear-right arm
-const int quadArm2 = 10; //front-right arm
-const int quadArm3 = 6; //rear-left arm
-const int quadArm4 = 5; //front-left arm
+const int QUAD_LED = 6;
+const int CPPM_DELTA = 5;
+
+//Command redundancy check:
+struct command_t {
+  int aile;
+  int elev;
+  int thro;
+  int rudd;
+} lastCommand;
+unsigned int duplicateCommandCount = 0;
 
 //LED State variables:
-int ledValue = 0;
-unsigned long previousMillis = 0;
-unsigned long previousSlowMillis = 0;
-const unsigned long ledUpdateInterval = 50;
-const unsigned long ledSlowUpdateInterval = ledUpdateInterval * 20;
+int                 ledValue                  = 0;
+unsigned long       previousMillis            = 0;
+unsigned long       previousSlowMillis        = 0;
+const unsigned long LED_UPDATE_INTERVAL       = 50;
+const unsigned long LED_SLOW_UPDATE_INTERVAL  = LED_UPDATE_INTERVAL * 20;
 typedef enum {
   FADE_IN,
   FADE_OUT,
@@ -21,6 +27,17 @@ typedef enum {
   ON
 } led_state_t;
 led_state_t ledState = FADE_IN;
+
+bool cmdWithinDelta(int cmd1, int cmd2) {
+  return cmd2 >= (cmd1 - 5) && cmd2 <= (cmd1 + 5);
+}
+
+bool repetitiveCmd(command_t curCmd) {
+  return cmdWithinDelta(lastCommand.aile, curCmd.aile) &&
+         cmdWithinDelta(lastCommand.elev, curCmd.elev) &&
+         cmdWithinDelta(lastCommand.thro, curCmd.thro) &&
+         cmdWithinDelta(lastCommand.rudd, curCmd.rudd);
+}
 
 void blinkLed() {
   //need to do something like this in the event we're
@@ -36,7 +53,7 @@ void blinkLed() {
 void manageLED() {
   unsigned long currentMillis = millis();
 
-  if(currentMillis - previousMillis > ledUpdateInterval) {
+  if(currentMillis - previousMillis > LED_UPDATE_INTERVAL ) {
 
     switch (ledState) {
       case FADE_IN:
@@ -59,7 +76,7 @@ void manageLED() {
         blinkLed();
         break;
       case SLOW_BLINK:
-        if (currentMillis - previousSlowMillis > ledSlowUpdateInterval) {
+        if (currentMillis - previousSlowMillis > LED_SLOW_UPDATE_INTERVAL ) {
           blinkLed();
           previousSlowMillis = currentMillis;
         }
@@ -69,20 +86,14 @@ void manageLED() {
         break;
     }
 
-    analogWrite(quadArm1, ledValue);
-    analogWrite(quadArm2, ledValue);
-    analogWrite(quadArm3, ledValue);
-    analogWrite(quadArm4, ledValue);
+    analogWrite(QUAD_LED, ledValue);
     previousMillis = currentMillis;
   }
 }
 
 void setup() {
   //pin declarations:
-  pinMode(quadArm1, OUTPUT);
-  pinMode(quadArm2, OUTPUT);
-  pinMode(quadArm3, OUTPUT);
-  pinMode(quadArm4, OUTPUT);
+  pinMode(QUAD_LED, OUTPUT);
 
   //Init
   Serial.begin(9600);
@@ -92,32 +103,54 @@ void setup() {
 void loop() {
 
   CPPM.cycle();
+
   if (CPPM.synchronized()) {
-    //int thro = CPPM.read_us(CPPM_THRO) - 1500;
-		int armDisarm = CPPM.read_us(CPPM_GEAR) - 1500;
-    int arduArmDisarm = CPPM.read(CPPM_AUX4) - 14000;
 
+    int aile = CPPM.read_us(CPPM_AILE);
+    int elev = CPPM.read_us(CPPM_ELEV);
+    int thro = CPPM.read_us(CPPM_THRO);
+    int rudd = CPPM.read_us(CPPM_RUDD);
+    int armDisarm = CPPM.read_us(CPPM_GEAR);
+    int rcOVRD = CPPM.read_us(CPPM_AUX1);
 
-    if (armDisarm < 0  && ledState != FADE_IN && ledState != FADE_OUT) { //|| arduArmDisarm < 0)
+    command_t currentCommand;
+    currentCommand.aile = aile;
+    currentCommand.elev = elev;
+    currentCommand.thro = thro;
+    currentCommand.rudd = rudd;
+    bool updateLastCommand = true;
+
+    //LED control:
+    if (armDisarm < 1250  && ledState != FADE_IN && ledState != FADE_OUT) {
       ledState = FADE_IN;
-      /*if (arduArmDisarm) {
-        Serial.print("FADE::"); Serial.print(arduArmDisarm); Serial.print("\n");
-    		Serial.flush();
-      }*/
     }
-    else if (armDisarm > 0) {// || arduArmDisarm > 0
-      ledState = FAST_BLINK;
-      /*if (thro > -100) {
-        ledState = ON;
-      }*/
-      /*if (arduArmDisarm > 0) {
-        Serial.print("BLINK::"); Serial.print(arduArmDisarm); Serial.print("\n");
-    		Serial.flush();
-      }*/
+    else if (armDisarm > 1250) {
+      ledState = ON;
+      if (rcOVRD < 1250) { //rc_override is active
 
+        //check for command repitition
+        if (repetitiveCmd(currentCommand)) {
+          updateLastCommand = false;
+          duplicateCommandCount++;
+          if (duplicateCommandCount > 50000 ) {
+            //aka, if we're armed and rc_override is on, but we havent received
+            //a new command in a while this is bad and probably means we're in failsafe mode.
+            //this will blink for about a second until our uint rolls over
+            ledState = FAST_BLINK;
+          }
+        }
+        else {
+          duplicateCommandCount = 0;
+        }
+      }
+      else {
+        duplicateCommandCount = 0;
+      }
     }
-    Serial.print("BLINK::"); Serial.print(arduArmDisarm); Serial.print("\n");
-    Serial.flush();
+
+    if (updateLastCommand) {
+      lastCommand = currentCommand;
+    }
 
   }
 
