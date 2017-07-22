@@ -108,7 +108,9 @@ StateManager::battery_state_t StateManager::getBatteryState() {
 
     cellVoltage = (cellVoltage - ((pin + 1) * measurementOffset)) / (pin + 1);
 
-    if (cellVoltage < 3.4) {
+    if (cellVoltage < 3.4 && cellVoltage > 2.0) {
+      //anything below 2 almost certainly indicates
+      //that the battery isnt currently connected
       currentState = BATT_CRIT;
       break;
     }
